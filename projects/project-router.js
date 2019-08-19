@@ -15,6 +15,10 @@ router.get('/', async (req, res) => {
     
 })
 
+router.get('/:projectId', validateProjectId, async (req, res) => {
+    res.status(200).json(req.project)
+})
+
 router.post('/', validateProject, async (req, res) => {
     const body = req.body
     try {
@@ -42,7 +46,8 @@ router.get('/:projectId/tasks', validateProjectId, async (req, res) => {
     const {projectId} = req.params
     try {
         const tasks = await Project.getTasks(projectId)
-        res.status(200).json(tasks)
+        const project = await Project.getProjectById(projectId)
+        res.status(200).json({project, tasks})
     }
     catch(error) {
         res.status(500).json({ message: "Could Not Get Tasks", erro: error })
