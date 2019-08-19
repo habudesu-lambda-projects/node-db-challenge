@@ -15,10 +15,6 @@ router.get('/', async (req, res) => {
     
 })
 
-router.get('/:id', validateProjectId, (req, res) => {
-    res.status(200).json(req.project)
-})
-
 router.post('/', validateProject, async (req, res) => {
     const body = req.body
     try {
@@ -30,17 +26,40 @@ router.post('/', validateProject, async (req, res) => {
     }
 })
 
+router.post('/:projectId/tasks', validateProjectId, validateTask, async (req, res) => {
+    const {projectId} = req.params
+    const body = req.body
+    try {
+        const task = await Project.addTask(body, projectId)
+        res.status(201).json(task)
+    }
+    catch(error) {
+        res.status(500).json({ message: "Could Not Create Task", error: error })
+    }
+})
+
+router.get('/:projectId/tasks', validateProjectId, async (req, res) => {
+    const {projectId} = req.params
+    try {
+        const tasks = await Project.getTasks(projectId)
+        res.status(200).json(tasks)
+    }
+    catch(error) {
+        res.status(500).json({ message: "Could Not Get Tasks", erro: error })
+    }
+})
+
 //validation middlewares
 
 async function validateProjectId( req, res, next ) {
-    const { id } = req.params
+    const { projectId } = req.params
     try {
-        const project = await Project.getProjectById(id)
+        const project = await Project.getProjectById(projectId)
         if(project) {
             req.project = project
             next()
         } else {
-            res.status(404).json({ message: `Project with id: ${id} does not exist`})
+            res.status(404).json({ message: `Project with id: ${projectId} does not exist`})
         }
     }
     catch(error) {
@@ -48,10 +67,19 @@ async function validateProjectId( req, res, next ) {
     }
 }
 
-function validateProject( req, res, next) {
+function validateProject( req, res, next ) {
     const body = req.body
     if(!body.name) {
         res.status(400).json({ message: "Project Name is Required" })
+    } else {
+        next()
+    }
+}
+
+function validateTask( req, res, next ) {
+    const body = req.body
+    if(!body.description) {
+        res.status(400).json({ message: "Task Description is Required" })
     } else {
         next()
     }
