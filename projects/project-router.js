@@ -4,10 +4,19 @@ const router = express.Router()
 
 const Project = require('./project-model.js')
 
+function completedToText(item) {
+    if(item.completed === 0) {
+        item.completed = 'false'
+    } else {
+        item.completed = 'true'
+    }
+    return item
+}
+
 router.get('/', async (req, res) => {
     try {
         const projects = await Project.getProjects()
-        res.status(200).json(projects)
+        res.status(200).json(projects.map(project => completedToText(project)))
     }
     catch(error) {
         res.status(500).json({ message: "Could Not Get Projects", error: error})
@@ -16,14 +25,14 @@ router.get('/', async (req, res) => {
 })
 
 router.get('/:projectId', validateProjectId, async (req, res) => {
-    res.status(200).json(req.project)
+    res.status(200).json(completedToText(req.project))
 })
 
 router.post('/', validateProject, async (req, res) => {
     const body = req.body
     try {
         const project = await Project.addProject(body)
-        res.status(201).json(project)
+        res.status(201).json(completedToText(project))
     }
     catch(error) {
         res.status(500).json({ message: "Could Not Create New Project", error: error })
@@ -35,7 +44,7 @@ router.post('/:projectId/tasks', validateProjectId, validateTask, async (req, re
     const body = req.body
     try {
         const task = await Project.addTask(body, projectId)
-        res.status(201).json(task)
+        res.status(201).json(completedToText(task))
     }
     catch(error) {
         res.status(500).json({ message: "Could Not Create Task", error: error })
@@ -47,7 +56,9 @@ router.get('/:projectId/tasks', validateProjectId, async (req, res) => {
     try {
         const tasks = await Project.getTasks(projectId)
         const project = await Project.getProjectById(projectId)
-        res.status(200).json({project, tasks})
+        res.status(200).json({
+            project: completedToText(project),
+            tasks: tasks.map(task => completedToText(task))})
     }
     catch(error) {
         res.status(500).json({ message: "Could Not Get Tasks", erro: error })
